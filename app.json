@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "WorkoutPlanner",
+    "slug": "WorkoutPlanner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.chonlachat2548.workoutplanner"
+    },
+    "plugins": [
+      "expo-splash-screen",
+      "expo-router",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c2b534e9-95ae-4381-968f-82d11f8d21ea"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c2b534e9-95ae-4381-968f-82d11f8d21ea"
+    },
+    "ios": {}
+  }
+}
