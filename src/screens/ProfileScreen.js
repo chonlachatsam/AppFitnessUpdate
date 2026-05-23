@@ -1,5 +1,5 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { signOut } from "firebase/auth"; // นำเข้า signOut
+import { signOut } from 'firebase/auth';
 import React, { useState } from 'react';
 import {
   Alert,
@@ -12,10 +12,11 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import { useApp } from '../context/AppContext';
-import { auth } from '../firebaseConfig'; // นำเข้า auth config
+import { auth } from '../firebaseConfig';
+import { colors } from '../theme';
 
 export default function ProfileScreen({ navigation }) {
   const { currentWeek, userData, setUserData } = useApp();
@@ -30,26 +31,25 @@ export default function ProfileScreen({ navigation }) {
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(false);
 
-  // ฟังก์ชันออกจากระบบ
   const handleLogout = () => {
     Alert.alert(
-      "ยืนยันการออกจากระบบ",
-      "คุณต้องการออกจากระบบใช่หรือไม่?",
+      'ยืนยันการออกจากระบบ',
+      'คุณต้องการออกจากระบบใช่หรือไม่?',
       [
-        { text: "ยกเลิก", style: "cancel" },
-        { 
-          text: "ยืนยัน", 
+        { text: 'ยกเลิก', style: 'cancel' },
+        {
+          text: 'ยืนยัน',
           onPress: () => {
             signOut(auth)
               .then(() => {
-                navigation.replace('Login'); // กลับไปหน้า Login
+                navigation.replace('Login');
               })
-              .catch((error) => {
-                Alert.alert("ผิดพลาด", "ไม่สามารถออกจากระบบได้");
+              .catch(() => {
+                Alert.alert('ผิดพลาด', 'ไม่สามารถออกจากระบบได้');
               });
           },
-          style: "destructive"
-        }
+          style: 'destructive',
+        },
       ]
     );
   };
@@ -63,32 +63,33 @@ export default function ProfileScreen({ navigation }) {
     ? (parseFloat(weight) / Math.pow(parseFloat(height) / 100, 2)).toFixed(1)
     : null;
 
-  const getBMIStatus = (bmi) => {
-    if (!bmi) return '';
-    if (bmi < 18.5) return { label: 'ผอมเกินไป', color: '#60A5FA' };
-    if (bmi < 23) return { label: 'ปกติ', color: '#34D399' };
-    if (bmi < 25) return { label: 'น้ำหนักเกินเล็กน้อย', color: '#FBBF24' };
-    return { label: 'อ้วน', color: '#E63946' };
+  const getBMIStatus = (bmiValue) => {
+    if (!bmiValue) return null;
+    if (bmiValue < 18.5) return { label: 'ผอมเกินไป', color: '#60A5FA' };
+    if (bmiValue < 23) return { label: 'ปกติ', color: '#34D399' };
+    if (bmiValue < 25) return { label: 'น้ำหนักเกินเล็กน้อย', color: '#FBBF24' };
+    return { label: 'อ้วน', color: colors.primary };
   };
 
   const bmiStatus = getBMIStatus(bmi);
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.heroGlowTop} />
+      <View style={styles.heroGlowBottom} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-
-          {/* Avatar Section */}
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.headerSection}>
             <View style={styles.avatarCircle}>
-              <Ionicons name="person" size={50} color="#E63946" />
+              <Ionicons name="person" size={50} color={colors.primary} />
               <TouchableOpacity style={styles.cameraIcon}>
                 <Ionicons name="camera" size={16} color="#fff" />
               </TouchableOpacity>
             </View>
+
             {isEditing ? (
               <TextInput
                 style={styles.nameInput}
@@ -99,23 +100,23 @@ export default function ProfileScreen({ navigation }) {
             ) : (
               <Text style={styles.userName}>{name || 'Gym User'}</Text>
             )}
+
             <Text style={styles.userSub}>สมาชิกสัปดาห์ที่ {currentWeek}</Text>
 
-            {bmi && (
+            {bmi && bmiStatus ? (
               <View style={[styles.bmiBadge, { borderColor: bmiStatus.color }]}>
                 <Text style={styles.bmiLabel}>BMI</Text>
                 <Text style={[styles.bmiValue, { color: bmiStatus.color }]}>{bmi}</Text>
                 <Text style={[styles.bmiStatus, { color: bmiStatus.color }]}>{bmiStatus.label}</Text>
               </View>
-            )}
+            ) : null}
           </View>
 
-          {/* ข้อมูลสุขภาพ */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>ข้อมูลสุขภาพ</Text>
               <TouchableOpacity onPress={isEditing ? handleSave : () => setIsEditing(true)}>
-                <Text style={styles.editBtnText}>{isEditing ? '💾 บันทึก' : '✏️ แก้ไข'}</Text>
+                <Text style={styles.editBtnText}>{isEditing ? 'บันทึก' : 'แก้ไข'}</Text>
               </TouchableOpacity>
             </View>
 
@@ -135,7 +136,7 @@ export default function ProfileScreen({ navigation }) {
                       keyboardType={item.keyboard}
                       editable={isEditing}
                       placeholder="ยังไม่ได้ระบุ"
-                      placeholderTextColor="#5a7090"
+                      placeholderTextColor={colors.textGray}
                     />
                     {item.value ? <Text style={styles.unitText}>{item.unit}</Text> : null}
                   </View>
@@ -144,11 +145,10 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </View>
 
-          {/* เป้าหมาย */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>เป้าหมาย</Text>
             <View style={styles.goalCard}>
-              {['ลดน้ำหนัก', 'เพิ่มกล้ามเนื้อ', 'ออกกำลังกายเพื่อสุขภาพ', 'เพิ่มน้ำหนัก'].map(g => (
+              {['ลดน้ำหนัก', 'เพิ่มกล้ามเนื้อ', 'ออกกำลังกายเพื่อสุขภาพ', 'เพิ่มน้ำหนัก'].map((g) => (
                 <TouchableOpacity
                   key={g}
                   style={[styles.goalBtn, goal === g && styles.goalBtnActive]}
@@ -160,7 +160,6 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </View>
 
-          {/* การตั้งค่า */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>การตั้งค่า</Text>
             <View style={styles.infoCard}>
@@ -172,7 +171,7 @@ export default function ProfileScreen({ navigation }) {
                 <Switch
                   value={notifEnabled}
                   onValueChange={setNotifEnabled}
-                  trackColor={{ false: '#1A2535', true: '#E63946' }}
+                  trackColor={{ false: '#223248', true: colors.primary }}
                 />
               </View>
               <View style={[styles.switchRow, { borderBottomWidth: 0 }]}>
@@ -180,37 +179,34 @@ export default function ProfileScreen({ navigation }) {
                 <Switch
                   value={soundEnabled}
                   onValueChange={setSoundEnabled}
-                  trackColor={{ false: '#1A2535', true: '#E63946' }}
+                  trackColor={{ false: '#223248', true: colors.primary }}
                 />
               </View>
             </View>
           </View>
 
-          {/* ปุ่มออกจากระบบที่ใช้งานได้แล้ว */}
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
             <Text style={styles.logoutText}>ออกจากระบบ</Text>
           </TouchableOpacity>
-
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Bottom Nav */}
       <View style={styles.bnav}>
         <TouchableOpacity style={styles.bnavitem} onPress={() => navigation.navigate('Home')}>
-          <Ionicons name="home-outline" size={24} color="#5a7090" />
+          <Ionicons name="home-outline" size={24} color={colors.textGray} />
           <Text style={styles.bnavlabel}>หน้าหลัก</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bnavitem} onPress={() => navigation.navigate('ExercisePicker')}>
-          <MaterialCommunityIcons name="dumbbell" size={24} color="#5a7090" />
+          <MaterialCommunityIcons name="dumbbell" size={24} color={colors.textGray} />
           <Text style={styles.bnavlabel}>ออกกำลัง</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bnavitem} onPress={() => navigation.navigate('Schedule')}>
-          <Ionicons name="calendar-outline" size={24} color="#5a7090" />
+          <Ionicons name="calendar-outline" size={24} color={colors.textGray} />
           <Text style={styles.bnavlabel}>ตาราง</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.bnavitem}>
-          <Ionicons name="person" size={26} color="#E63946" />
-          <Text style={[styles.bnavlabel, { color: '#E63946', fontWeight: '800' }]}>โปรไฟล์</Text>
+          <Ionicons name="person" size={26} color={colors.primary} />
+          <Text style={[styles.bnavlabel, styles.bnavlabelActive]}>โปรไฟล์</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -218,73 +214,142 @@ export default function ProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F1923' },
-  scrollContent: { paddingBottom: 120 },
+  container: { flex: 1, backgroundColor: '#071a28' },
+  heroGlowTop: { position: 'absolute', top: -110, right: -40, width: 220, height: 220, borderRadius: 220, backgroundColor: 'rgba(230,57,70,0.10)' },
+  heroGlowBottom: { position: 'absolute', top: 260, left: -90, width: 220, height: 220, borderRadius: 220, backgroundColor: 'rgba(16,185,129,0.07)' },
+  scrollContent: { paddingBottom: 108 },
   headerSection: { alignItems: 'center', marginVertical: 30 },
   avatarCircle: {
-    width: 100, height: 100, borderRadius: 50,
-    backgroundColor: '#1A2535', justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: '#E63946', position: 'relative'
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#162638',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary,
+    position: 'relative',
   },
   cameraIcon: {
-    position: 'absolute', bottom: 0, right: 0,
-    backgroundColor: '#E63946', width: 32, height: 32, borderRadius: 16,
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 2, borderColor: '#0F1923'
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: colors.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#071a28',
   },
-  userName: { color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 15 },
+  userName: { color: colors.white, fontSize: 28, fontWeight: '800', marginTop: 15, letterSpacing: 0.2 },
   nameInput: {
-    color: '#fff', fontSize: 24, fontWeight: '800', marginTop: 15,
-    borderBottomWidth: 1, borderBottomColor: '#E63946', minWidth: 150, textAlign: 'center'
+    color: colors.white,
+    fontSize: 24,
+    fontWeight: '800',
+    marginTop: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.primary,
+    minWidth: 150,
+    textAlign: 'center',
   },
-  userSub: { color: '#5a7090', fontSize: 14, marginTop: 5 },
+  userSub: { color: colors.textGray, fontSize: 14, marginTop: 6 },
   bmiBadge: {
-    marginTop: 15, paddingHorizontal: 20, paddingVertical: 10,
-    borderRadius: 20, borderWidth: 1.5, alignItems: 'center',
-    backgroundColor: '#1A2535', flexDirection: 'row', gap: 10
+    marginTop: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    backgroundColor: '#1a293b',
+    flexDirection: 'row',
+    gap: 10,
   },
-  bmiLabel: { color: '#5a7090', fontSize: 13, fontWeight: '700' },
+  bmiLabel: { color: colors.textGray, fontSize: 13, fontWeight: '700' },
   bmiValue: { fontSize: 20, fontWeight: '800' },
   bmiStatus: { fontSize: 13, fontWeight: '600' },
   section: { paddingHorizontal: 20, marginBottom: 25 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  sectionTitle: { color: '#5a7090', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
-  editBtnText: { color: '#E63946', fontWeight: '700', fontSize: 14 },
-  infoCard: { backgroundColor: '#1A2535', borderRadius: 20, paddingHorizontal: 15 },
-  infoRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#2a3a4a'
+  sectionTitle: { color: colors.textGray, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  editBtnText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
+  infoCard: {
+    backgroundColor: '#1a293b',
+    borderRadius: 26,
+    paddingHorizontal: 15,
+    borderWidth: 1,
+    borderColor: '#24384c',
+    shadowColor: '#000',
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
   },
-  infoLabel: { color: '#5a7090', fontSize: 14 },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: 74,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2b3d52',
+  },
+  infoLabel: { color: colors.textGray, fontSize: 14 },
   inputWithUnit: { flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'flex-end' },
-  infoValue: { color: '#fff', fontSize: 14, textAlign: 'right', marginLeft: 20 },
-  unitText: { color: '#5a7090', fontSize: 13, marginLeft: 5 },
+  infoValue: { color: colors.white, fontSize: 14, textAlign: 'right', marginLeft: 20 },
+  unitText: { color: colors.textGray, fontSize: 13, marginLeft: 5 },
   goalCard: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   goalBtn: {
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20,
-    backgroundColor: '#1A2535', borderWidth: 1, borderColor: '#2a3a4a'
+    minHeight: 42,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#1a293b',
+    borderWidth: 1,
+    borderColor: '#2b3d52',
+    justifyContent: 'center',
   },
-  goalBtnActive: { backgroundColor: 'rgba(230,57,70,0.15)', borderColor: '#E63946' },
-  goalBtnText: { color: '#5a7090', fontSize: 13, fontWeight: '600' },
-  goalBtnTextActive: { color: '#E63946' },
+  goalBtnActive: { backgroundColor: 'rgba(230,57,70,0.14)', borderColor: colors.primary },
+  goalBtnText: { color: colors.textLight, fontSize: 13, fontWeight: '600' },
+  goalBtnTextActive: { color: colors.primary },
   switchRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: '#2a3a4a'
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minHeight: 74,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2b3d52',
   },
-  switchLabel: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  switchSub: { color: '#5a7090', fontSize: 12, marginTop: 2 },
+  switchLabel: { color: colors.white, fontSize: 15, fontWeight: '600' },
+  switchSub: { color: colors.textGray, fontSize: 12, marginTop: 2 },
   logoutBtn: {
-    marginHorizontal: 20, marginTop: 10, padding: 18, borderRadius: 20,
-    backgroundColor: 'rgba(230, 57, 70, 0.1)', alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(230, 57, 70, 0.2)'
+    marginHorizontal: 20,
+    marginTop: 10,
+    padding: 18,
+    borderRadius: 20,
+    backgroundColor: 'rgba(230, 57, 70, 0.08)',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(230, 57, 70, 0.25)',
   },
-  logoutText: { color: '#E63946', fontWeight: '800', fontSize: 16 },
+  logoutText: { color: colors.primary, fontWeight: '800', fontSize: 16 },
   bnav: {
-    flexDirection: 'row', height: 85, borderTopWidth: 1, borderTopColor: '#1A2535',
-    justifyContent: 'space-around', alignItems: 'center',
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    backgroundColor: '#0F1923', paddingBottom: 20
+    flexDirection: 'row',
+    height: 82,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.navBg,
+    paddingTop: 8,
+    paddingBottom: 14,
   },
   bnavitem: { alignItems: 'center', justifyContent: 'center' },
-  bnavlabel: { fontSize: 10, color: '#5a7090', fontWeight: '700', marginTop: 4 },
+  bnavlabel: { fontSize: 10, color: colors.textGray, fontWeight: '700', marginTop: 4 },
+  bnavlabelActive: { color: colors.primary, fontWeight: '800' },
 });
