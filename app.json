@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "WorkoutPlanner",
-    "slug": "WorkoutPlanner",
+    "slug": "AppFitnessUpdate",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -22,15 +22,16 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c2b534e9-95ae-4381-968f-82d11f8d21ea"
+        "projectId": "56de20fc-f3b2-4124-b315-994bd831a785"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/c2b534e9-95ae-4381-968f-82d11f8d21ea"
+      "url": "https://u.expo.dev/56de20fc-f3b2-4124-b315-994bd831a785"
     },
-    "ios": {}
+    "ios": {},
+    "owner": "chonlachat2005"
   }
 }
