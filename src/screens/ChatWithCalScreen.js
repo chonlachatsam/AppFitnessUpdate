@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -117,6 +118,17 @@ const buildCaloriesGapText = (summary) => {
     return `วันนี้ยังเหลือได้อีก ${summary.remainingCalories} kcal จากเป้า ${summary.targetCalories} kcal`;
   }
   return `วันนี้เกินเป้าไป ${Math.abs(summary.remainingCalories)} kcal จากเป้า ${summary.targetCalories} kcal`;
+};
+
+const formatRemainingDisplay = (summary) => {
+  const remaining = Number(summary.remainingCalories) || 0;
+  const target = Number(summary.targetCalories) || 0;
+
+  if (remaining >= 0) {
+    return `-${remaining} / ${target} kcal`;
+  }
+
+  return `+${Math.abs(remaining)} / ${target} kcal`;
 };
 
 async function askCalAI({ prompt, base64Image, userData, stats, summary, todayEntries, mealBreakdown }) {
@@ -267,8 +279,8 @@ export default function ChatWithCalScreen({ navigation }) {
     return null;
   };
 
-  const sendMessage = async (text, base64Image = null) => {
-    if (!text && !base64Image) return;
+  const sendMessage = async (text, base64Image = null, imageUri = null) => {
+    if (!text && !base64Image && !imageUri) return;
 
     const currentSummary = getNutritionSummary(todayKey);
     const todayEntries = getNutritionEntriesForDate(todayKey);
@@ -282,6 +294,7 @@ export default function ChatWithCalScreen({ navigation }) {
     appendMessage({
       id: Date.now(),
       text: text || 'กำลังวิเคราะห์รูปอาหาร...',
+      image: imageUri || null,
       sender: 'user',
     });
     setInputText('');
@@ -421,7 +434,7 @@ export default function ChatWithCalScreen({ navigation }) {
     }
 
     if (!result.canceled && result.assets?.[0]?.base64) {
-      sendMessage(null, result.assets[0].base64);
+      sendMessage(null, result.assets[0].base64, result.assets[0].uri);
     }
   };
 
@@ -437,8 +450,8 @@ export default function ChatWithCalScreen({ navigation }) {
 
       <View style={styles.summaryBar}>
         <View style={styles.summaryChip}>
-          <Text style={styles.summaryChipLabel}>เป้าทั้งวัน</Text>
-          <Text style={styles.summaryChipValue}>{summary.targetCalories || 0} kcal</Text>
+          <Text style={styles.summaryChipLabel}>คงเหลือวันนี้</Text>
+          <Text style={styles.summaryChipValue}>{formatRemainingDisplay(summary)}</Text>
         </View>
         <View style={styles.summaryChip}>
           <Text style={styles.summaryChipLabel}>กินแล้ว</Text>
@@ -459,6 +472,7 @@ export default function ChatWithCalScreen({ navigation }) {
         >
           {calChatMessages.map((msg) => (
             <View key={msg.id} style={[styles.bubble, msg.sender === 'user' ? styles.userBubble : styles.botBubble]}>
+              {msg.image ? <Image source={{ uri: msg.image }} style={styles.chatImage} /> : null}
               <Text style={styles.chatText}>{msg.text}</Text>
             </View>
           ))}
@@ -544,6 +558,13 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 4,
   },
   chatText: { color: 'white', fontSize: 15, lineHeight: 22 },
+  chatImage: {
+    width: 220,
+    height: 220,
+    borderRadius: 16,
+    marginBottom: 10,
+    backgroundColor: '#0A1524',
+  },
   loader: { marginVertical: 10, alignSelf: 'flex-start', marginLeft: 20 },
   inputWrap: {
     paddingHorizontal: 10,
