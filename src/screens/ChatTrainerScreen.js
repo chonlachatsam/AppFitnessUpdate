@@ -5,33 +5,28 @@ import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, 
 import { Bubble, Composer, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { useApp } from '../context/AppContext';
 
-const API_KEY = "AIzaSyAwxpDvt7S2U0WcB1g6eZKWd4KPHpXjB-o";
+const API_KEY = 'AIzaSyAwxpDvt7S2U0WcB1g6eZKWd4KPHpXjB-o';
 
-// ท่าทั้งหมดในแอพ ส่งให้ AI เลือก
 const ALL_EXERCISES = {
-  chest:      { c1:'Bench Press', c2:'Dumbbell Press', c3:'Dumbbell Fly', c4:'Dumbbell Pullover', c5:'Chest Dip' },
-  back:       { b1:'Bent Over Row', b2:'Lat Pulldown', b3:'Seated Cable Row', b4:'Rear Delt Fly', b5:'Hyperextension' },
-  arms_front: { af1:'Z-Bar Curl', af2:'Incline Dumbbell Curl', af3:'Preacher Curl', af4:'Hammer Curl' },
-  arms_back:  { ab1:'Tricep Dips', ab2:'Push Down', ab3:'Dumbbell Kickback', ab4:'Reverse Pushdown' },
-  legs:       { l1:'Bulgarian Split Squat', l2:'Hack Squat', l3:'Leg Extension', l4:'Barbell Squat', l5:'Sumo Deadlift' },
-  abs:        { as1:'Heel Touch', as2:'Russian Twist', as3:'Plank', as4:'Bicycle Crunch', as5:'Half Wipers' },
-  shoulders:  { s1:'Arnold Press', s2:'Rear Lateral Raise', s3:'Overhead Press', s4:'Lateral Raise', s5:'Front Raise', s6:'Alternating Front Raise', s7:'4-Ways Lateral Raise' },
+  chest: { c1: 'Bench Press', c2: 'Dumbbell Press', c3: 'Dumbbell Fly', c4: 'Dumbbell Pullover', c5: 'Chest Dip' },
+  back: { b1: 'Bent Over Row', b2: 'Lat Pulldown', b3: 'Seated Cable Row', b4: 'Rear Delt Fly', b5: 'Hyperextension' },
+  arms_front: { af1: 'Z-Bar Curl', af2: 'Incline Dumbbell Curl', af3: 'Preacher Curl', af4: 'Hammer Curl' },
+  arms_back: { ab1: 'Tricep Dips', ab2: 'Push Down', ab3: 'Dumbbell Kickback', ab4: 'Reverse Pushdown' },
+  legs: { l1: 'Bulgarian Split Squat', l2: 'Hack Squat', l3: 'Leg Extension', l4: 'Barbell Squat', l5: 'Sumo Deadlift' },
+  abs: { as1: 'Heel Touch', as2: 'Russian Twist', as3: 'Plank', as4: 'Bicycle Crunch', as5: 'Half Wipers' },
+  shoulders: { s1: 'Arnold Press', s2: 'Rear Lateral Raise', s3: 'Overhead Press', s4: 'Lateral Raise', s5: 'Front Raise', s6: 'Alternating Front Raise', s7: '4-Ways Lateral Raise' },
 };
 
 const exerciseListText = Object.entries(ALL_EXERCISES)
   .map(([muscle, exs]) => `${muscle}: ${Object.entries(exs).map(([id, name]) => `${id}=${name}`).join(', ')}`)
   .join('\n');
 
-// เช็คว่ามีข้อมูลครบไหม
-const hasUserData = (userData) => {
-  return userData?.weight && userData?.height && userData?.age;
-};
+const hasUserData = (userData) => Boolean(userData?.weight && userData?.height && userData?.age);
 
 async function askGemini(prompt, userData, stats) {
   const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-  
   const userDataComplete = hasUserData(userData);
-  
+
   try {
     const response = await fetch(URL, {
       method: 'POST',
@@ -40,37 +35,37 @@ async function askGemini(prompt, userData, stats) {
         contents: [{ parts: [{ text: `คุณคือ AT Personal Trainer ตอบเป็นภาษาไทย เป็นกันเอง กระชับ
 
 ข้อมูลผู้ใช้: ${JSON.stringify(userData)}
-BMI: ${stats?.bmi || 'ยังไม่มีข้อมูล'}, TDEE: ${stats?.tdee || 'ยังไม่มีข้อมูล'} kcal
-ข้อมูลครบหรือไม่: ${userDataComplete ? 'ครบแล้ว' : 'ยังไม่ครบ (ยังไม่มี น้ำหนัก/ส่วนสูง/อายุ)'}
+BMI: ${stats?.bmi || 'ยังไม่มีข้อมูล'}
+TDEE: ${stats?.tdee || 'ยังไม่มีข้อมูล'} kcal
+ข้อมูลครบหรือไม่: ${userDataComplete ? 'ครบแล้ว' : 'ยังไม่ครบ'}
 
 ท่าออกกำลังกายที่มีในแอพ:
 ${exerciseListText}
 
-== กฎสำคัญ ==
-${!userDataComplete ? `
-⚠️ ผู้ใช้ยังไม่ได้กรอกข้อมูลส่วนตัว
-กฎเหล็ก: ไม่ว่าผู้ใช้จะถามอะไร ให้ตอบสั้นๆ แล้วบอกว่าต้องกรอกข้อมูลก่อนเสมอ
-ตัวอย่าง: "ก่อนแนะนำได้ ขอทราบข้อมูลคุณก่อนนะครับ บอกได้เลยว่า น้ำหนัก ส่วนสูง อายุ และเป้าหมายของคุณคืออะไรครับ?"
-และแนบ [NEED_INFO] ท้ายเสมอ` : `
-ข้อมูลครบแล้ว สามารถแนะนำได้เต็มที่`}
+กฎสำคัญ:
+${!userDataComplete
+  ? 'ถ้าข้อมูลผู้ใช้ยังไม่ครบ ให้บอกสั้นๆ ว่าต้องกรอกน้ำหนัก ส่วนสูง และอายุก่อน แล้วแนบ [NEED_INFO]'
+  : 'ถ้าข้อมูลครบแล้ว สามารถแนะนำได้เต็มที่'}
 
 กฎการตอบ:
-1. ถ้าผู้ใช้บอกข้อมูลร่างกาย (น้ำหนัก/ส่วนสูง/อายุ/เป้าหมาย) ให้แนบ [UPDATE_USER:{"weight":"xx","height":"xx","age":"xx","goal":"xx"}]
-2. ถ้าผู้ใช้บอกเป้าหมายการฝึก หรืออยากได้โปรแกรม หรือบอกว่าอยากฝึกส่วนไหน เช่น "อยากอกใหญ่" "อยากไหล่กว้าง" "ขอโปรแกรม" ให้แนบ [GENERATE_PROGRAM:"สิ่งที่ผู้ใช้ต้องการ"]
+1. ถ้าผู้ใช้บอกน้ำหนัก ส่วนสูง อายุ หรือเป้าหมาย ให้แนบ [UPDATE_USER:{"weight":"xx","height":"xx","age":"xx","goal":"xx"}]
+2. ถ้าผู้ใช้อยากได้โปรแกรม ให้แนบ [GENERATE_PROGRAM:"สิ่งที่ผู้ใช้ต้องการ"]
 3. ถ้าผู้ใช้เลือกคุมอาหาร ให้แนบ [GO_TO_NUTRITION]
-4. ถ้าผู้ใช้อยากยกเลิกโปรแกรม ให้แนบ [REMOVE_PROGRAM]
-5. ถ้าผู้ใช้ปวด/เจ็บ ให้วิเคราะห์และแนะนำยืดเหยียด ห้ามแนะนำให้ฝืนเล่น
+4. ถ้าผู้ใช้อยากลบโปรแกรม ให้แนบ [REMOVE_PROGRAM]
+5. ถ้าผู้ใช้เจ็บหรือปวด ให้แนะนำพักและยืดเหยียด ห้ามแนะนำให้ฝืนเล่น
 
-ข้อความ: "${prompt}"` }] }]
-      })
+ข้อความ: "${prompt}"` }] }],
+      }),
     });
+
     const data = await response.json();
     if (data.candidates?.[0]?.content) return data.candidates[0].content.parts[0].text;
-    return "ขออภัยครับ ลองใหม่นะครับ";
-  } catch (e) { return "เชื่อมต่อไม่ได้ครับ"; }
+    return 'ขออภัยครับ ลองใหม่อีกครั้งนะครับ';
+  } catch {
+    return 'เชื่อมต่อไม่ได้ครับ';
+  }
 }
 
-// AI คิดโปรแกรมใหม่ตามที่ผู้ใช้ต้องการ
 async function generateAIProgram(userRequest, userData) {
   const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
   try {
@@ -87,13 +82,13 @@ async function generateAIProgram(userRequest, userData) {
 ${exerciseListText}
 
 คิดโปรแกรมออกกำลังกาย 1 สัปดาห์ที่เหมาะสมที่สุดตามความต้องการ
-ตอบเป็น JSON เท่านั้น ห้ามมีข้อความอื่นเด็ดขาด:
+ตอบเป็น JSON เท่านั้น:
 {
   "name": "ชื่อโปรแกรม",
   "desc": "คำอธิบายสั้นๆ",
   "reason": "เหตุผลที่เหมาะกับผู้ใช้คนนี้",
   "days": {
-    "1": [{"exId": "c1", "muscleId": "chest"}, {"exId": "s1", "muscleId": "shoulders"}],
+    "1": [{"exId": "c1", "muscleId": "chest"}],
     "2": "rest",
     "3": [{"exId": "b1", "muscleId": "back"}],
     "4": [{"exId": "l1", "muscleId": "legs"}],
@@ -101,17 +96,19 @@ ${exerciseListText}
     "6": "rest",
     "7": "rest"
   }
-}` }] }]
-      })
+}` }] }],
+      }),
     });
+
     const data = await response.json();
     if (data.candidates?.[0]?.content) {
       const text = data.candidates[0].content.parts[0].text;
-      const clean = text.replace(/```json|```/g, '').trim();
-      return JSON.parse(clean);
+      return JSON.parse(text.replace(/```json|```/g, '').trim());
     }
     return null;
-  } catch (e) { return null; }
+  } catch {
+    return null;
+  }
 }
 
 async function analyzeBodyImage(base64Image, userData, stats) {
@@ -122,17 +119,20 @@ async function analyzeBodyImage(base64Image, userData, stats) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [
-          { inline_data: { mime_type: "image/jpeg", data: base64Image } },
+          { inline_data: { mime_type: 'image/jpeg', data: base64Image } },
           { text: `วิเคราะห์รูปร่างของคนในภาพ ข้อมูลผู้ใช้: ${JSON.stringify(userData)}, BMI: ${stats?.bmi}
-                    วิเคราะห์สภาพร่างกาย แนะนำจุดที่ควรพัฒนา แล้วแนบ [GENERATE_PROGRAM:"วิเคราะห์จากรูป: (บอกสิ่งที่เห็นจากรูป)"] ท้ายเสมอ
-                    ตอบเป็นภาษาไทย กระชับ` }
-        ] }]
-      })
+วิเคราะห์สภาพร่างกาย แนะนำจุดที่ควรพัฒนา แล้วแนบ [GENERATE_PROGRAM:"วิเคราะห์จากรูป: (บอกสิ่งที่เห็นจากรูป)"] ท้ายเสมอ
+ตอบเป็นภาษาไทย กระชับ` },
+        ] }],
+      }),
     });
+
     const data = await response.json();
     if (data.candidates?.[0]?.content) return data.candidates[0].content.parts[0].text;
-    return "วิเคราะห์รูปไม่ได้ครับ";
-  } catch (e) { return "เชื่อมต่อไม่ได้ครับ"; }
+    return 'วิเคราะห์รูปไม่ได้ครับ';
+  } catch {
+    return 'เชื่อมต่อไม่ได้ครับ';
+  }
 }
 
 export default function ChatTrainerScreen({ navigation }) {
@@ -147,12 +147,14 @@ export default function ChatTrainerScreen({ navigation }) {
     if (match) {
       try {
         const newData = JSON.parse(match[1]);
-        setUserData(prev => ({
+        setUserData((prev) => ({
           ...prev,
-          ...Object.fromEntries(Object.entries(newData).filter(([_, v]) => v && v !== 'xx'))
+          ...Object.fromEntries(Object.entries(newData).filter(([_, v]) => v && v !== 'xx')),
         }));
         return responseText.replace(/\[UPDATE_USER:.*?\]/, '').trim();
-      } catch (e) {}
+      } catch {
+        return responseText;
+      }
     }
     return responseText;
   };
@@ -169,21 +171,22 @@ export default function ChatTrainerScreen({ navigation }) {
     if (!generatedProgram) return;
     setSchedule(generatedProgram.days);
     setShowProgramModal(false);
-    setChatMessages(prev => GiftedChat.append(prev, [{
+    setChatMessages((prev) => GiftedChat.append(prev, [{
       _id: Math.random().toString(),
-      text: `✅ บันทึกโปรแกรม "${generatedProgram.name}" ลงตารางแล้วครับ! 🗓️\n\n${generatedProgram.reason}`,
+      text: `บันทึกโปรแกรม "${generatedProgram.name}" ลงตารางแล้วครับ\n\n${generatedProgram.reason}`,
       createdAt: new Date(),
       user: { _id: 2, name: 'AI Trainer' },
     }]));
-    Alert.alert("บันทึกสำเร็จ! 🎉", `"${generatedProgram.name}"`, [
-      { text: "ดูตาราง", onPress: () => navigation.navigate('Schedule') },
-      { text: "คุยต่อ", style: "cancel" }
+    Alert.alert('บันทึกสำเร็จ', `"${generatedProgram.name}"`, [
+      { text: 'ดูตาราง', onPress: () => navigation.navigate('Schedule') },
+      { text: 'คุยต่อ', style: 'cancel' },
     ]);
   };
 
   const onSend = useCallback(async (newMessages = []) => {
-    setChatMessages(prev => GiftedChat.append(prev, newMessages));
+    setChatMessages((prev) => GiftedChat.append(prev, newMessages));
     setIsTyping(true);
+
     try {
       const rawResponse = await askGemini(newMessages[0].text, userData, stats);
       let cleanText = extractAndUpdateUserData(rawResponse);
@@ -199,7 +202,7 @@ export default function ChatTrainerScreen({ navigation }) {
         .replace('[NEED_INFO]', '')
         .trim();
 
-      setChatMessages(prev => GiftedChat.append(prev, [{
+      setChatMessages((prev) => GiftedChat.append(prev, [{
         _id: Math.random().toString(),
         text: cleanText,
         createdAt: new Date(),
@@ -209,20 +212,23 @@ export default function ChatTrainerScreen({ navigation }) {
       if (programMatch) setTimeout(() => handleGenerateProgram(programMatch[1]), 600);
       if (hasRemove) setSchedule({ 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] });
       if (hasNutrition) {
-        setTimeout(() => Alert.alert("ไปดูแผนอาหาร?", "", [
-          { text: "ไปเลย", onPress: () => navigation.navigate('Nutrition') },
-          { text: "ทีหลัง" }
+        setTimeout(() => Alert.alert('ไปดูแผนอาหารไหม', '', [
+          { text: 'ไปเลย', onPress: () => navigation.navigate('Nutrition') },
+          { text: 'ทีหลัง' },
         ]), 1000);
       }
-    } catch (e) { console.error(e); }
-    finally { setIsTyping(false); }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsTyping(false);
+    }
   }, [userData, stats]);
 
   const handleImagePicker = () => {
-    Alert.alert("วิเคราะห์รูปร่าง", "เลือกวิธีส่งรูปครับ", [
-      { text: "ถ่ายรูป", onPress: () => pickImage('camera') },
-      { text: "เลือกจากคลัง", onPress: () => pickImage('gallery') },
-      { text: "ยกเลิก", style: "cancel" }
+    Alert.alert('วิเคราะห์รูปร่าง', 'เลือกวิธีส่งรูปครับ', [
+      { text: 'ถ่ายรูป', onPress: () => pickImage('camera') },
+      { text: 'เลือกจากคลัง', onPress: () => pickImage('gallery') },
+      { text: 'ยกเลิก', style: 'cancel' },
     ]);
   };
 
@@ -237,27 +243,32 @@ export default function ChatTrainerScreen({ navigation }) {
       if (!p.granted) return;
       result = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7 });
     }
+
     if (!result.canceled && result.assets[0].base64) {
-      setChatMessages(prev => GiftedChat.append(prev, [{
+      setChatMessages((prev) => GiftedChat.append(prev, [{
         _id: Math.random().toString(),
         image: result.assets[0].uri,
         createdAt: new Date(),
         user: { _id: 1 },
       }]));
       setIsTyping(true);
+
       try {
         const rawRes = await analyzeBodyImage(result.assets[0].base64, userData, stats);
         const programMatch = rawRes.match(/\[GENERATE_PROGRAM:"(.+?)"\]/);
         const cleanText = rawRes.replace(/\[GENERATE_PROGRAM:"(.+?)"\]/, '').trim();
-        setChatMessages(prev => GiftedChat.append(prev, [{
+        setChatMessages((prev) => GiftedChat.append(prev, [{
           _id: Math.random().toString(),
           text: cleanText,
           createdAt: new Date(),
           user: { _id: 2, name: 'AI Trainer' },
         }]));
         if (programMatch) setTimeout(() => handleGenerateProgram(programMatch[1]), 600);
-      } catch (e) { console.error(e); }
-      finally { setIsTyping(false); }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsTyping(false);
+      }
     }
   };
 
@@ -281,14 +292,10 @@ export default function ChatTrainerScreen({ navigation }) {
           isTyping={isTyping}
           alwaysShowSend
           scrollToBottom
-          renderInputToolbar={props => (
-            <InputToolbar
-              {...props}
-              containerStyle={styles.inputToolbar}
-              primaryStyle={styles.inputPrimary}
-            />
+          renderInputToolbar={(props) => (
+            <InputToolbar {...props} containerStyle={styles.inputToolbar} primaryStyle={styles.inputPrimary} />
           )}
-          renderComposer={props => (
+          renderComposer={(props) => (
             <Composer
               {...props}
               textInputStyle={styles.composerStyle}
@@ -301,32 +308,25 @@ export default function ChatTrainerScreen({ navigation }) {
               <Ionicons name="add" size={24} color="#FFFFFF" />
             </TouchableOpacity>
           )}
-          renderSend={props => (
-            <Send
-              {...props}
-              alwaysShowSend
-              disabled={false}
-              containerStyle={styles.sendContainer}
-            >
+          renderSend={(props) => (
+            <Send {...props} alwaysShowSend disabled={false} containerStyle={styles.sendContainer}>
               <View style={styles.sendIconCircle}>
                 <Ionicons name="send" size={18} color="white" />
               </View>
             </Send>
           )}
-          renderBubble={props => (
+          renderBubble={(props) => (
             <Bubble
               {...props}
               wrapperStyle={{
                 right: { backgroundColor: '#E63946', borderRadius: 15 },
-                left: { backgroundColor: '#1A2535', borderRadius: 15 }
+                left: { backgroundColor: '#1A2535', borderRadius: 15 },
               }}
               textStyle={{ left: { color: '#fff' } }}
             />
           )}
         />
       </KeyboardAvoidingView>
-
-      {/* Modal Logic คงเดิม */}
     </View>
   );
 }
@@ -336,65 +336,10 @@ const styles = StyleSheet.create({
   headerSafeArea: { backgroundColor: '#161E2E' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 15, paddingVertical: 10 },
   headerTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-
-  inputToolbar: {
-    backgroundColor: '#161E2E',
-    borderTopWidth: 0,
-    paddingTop: 6,
-    paddingBottom: Platform.OS === 'ios' ? 10 : 8,
-    paddingHorizontal: 8,
-    marginHorizontal: 10,
-    marginBottom: 8,
-    borderRadius: 999,
-  },
-
-  inputPrimary: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 52,
-  },
-
-  actionButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: 40,
-    width: 40,
-    borderRadius: 20,
-    marginLeft: 4,
-  },
-
-  composerStyle: {
-    color: '#fff',
-    fontSize: 16,
-    backgroundColor: '#000000',
-    borderRadius: 999,
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 12 : 10,
-    paddingBottom: Platform.OS === 'ios' ? 10 : 8,
-    marginHorizontal: 6,
-    minHeight: 40,
-  },
-
-  sendContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginRight: 4,
-    opacity: 1,
-  },
-
-  sendIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#00C853',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' },
-  modalBox: { backgroundColor: '#0F1923', borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 25, maxHeight: '90%' },
-  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 20 },
-  closeModalBtn: { marginTop: 5, padding: 16, borderRadius: 16, backgroundColor: '#1A2535', alignItems: 'center' },
-  closeModalText: { color: '#5a7090', fontWeight: '700' },
+  inputToolbar: { backgroundColor: '#161E2E', borderTopWidth: 0, paddingTop: 6, paddingBottom: Platform.OS === 'ios' ? 10 : 8, paddingHorizontal: 8, marginHorizontal: 10, marginBottom: 8, borderRadius: 999 },
+  inputPrimary: { alignItems: 'center', justifyContent: 'center', minHeight: 52 },
+  actionButton: { justifyContent: 'center', alignItems: 'center', height: 40, width: 40, borderRadius: 20, marginLeft: 4 },
+  composerStyle: { color: '#fff', fontSize: 16, backgroundColor: '#000000', borderRadius: 999, paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 12 : 10, paddingBottom: Platform.OS === 'ios' ? 10 : 8, marginHorizontal: 6, minHeight: 40 },
+  sendContainer: { justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginRight: 4, opacity: 1 },
+  sendIconCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#00C853', justifyContent: 'center', alignItems: 'center' },
 });

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Alert, Dimensions, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import Svg, { Circle, G, Path, Text as SvgText } from 'react-native-svg'; // เพิ่มการ Import
+import Svg, { Circle, G, Path, Text as SvgText } from 'react-native-svg';
 import { useApp } from '../context/AppContext';
 
 const { width } = Dimensions.get('window');
@@ -13,13 +13,14 @@ export default function StatsScreen({ navigation }) {
   const [inputWeight, setInputWeight] = useState('');
 
   const handleRecord = () => {
-    if (!inputWeight || isNaN(parseFloat(inputWeight))) {
-      Alert.alert("กรุณากรอกน้ำหนักให้ถูกต้องครับ");
+    if (!inputWeight || Number.isNaN(parseFloat(inputWeight))) {
+      Alert.alert('กรุณากรอกน้ำหนักให้ถูกต้อง');
       return;
     }
+
     recordWeight(inputWeight);
     setInputWeight('');
-    Alert.alert("✅ บันทึกสำเร็จ!", `น้ำหนัก ${inputWeight} กก. บันทึกแล้วครับ`);
+    Alert.alert('บันทึกสำเร็จ', `น้ำหนัก ${inputWeight} กก. ถูกบันทึกแล้ว`);
   };
 
   const getBMIColor = (bmi) => {
@@ -38,35 +39,39 @@ export default function StatsScreen({ navigation }) {
 
   const renderWeightChart = () => {
     if (weightHistory.length < 2) return null;
-    const weights = weightHistory.map(r => r.weight);
+
+    const weights = weightHistory.map((item) => item.weight);
     const minW = Math.min(...weights) - 2;
     const maxW = Math.max(...weights) + 2;
-    const range = maxW - minW;
-    const points = weightHistory.map((r, i) => ({
-      x: (i / (weightHistory.length - 1)) * CHART_WIDTH,
-      y: CHART_HEIGHT - ((r.weight - minW) / range) * CHART_HEIGHT,
-      ...r,
+    const range = maxW - minW || 1;
+
+    const points = weightHistory.map((record, index) => ({
+      x: (index / (weightHistory.length - 1)) * CHART_WIDTH,
+      y: CHART_HEIGHT - ((record.weight - minW) / range) * CHART_HEIGHT,
+      ...record,
     }));
 
-    const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const pathD = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
 
     return (
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>กราฟน้ำหนัก</Text>
         <View style={{ height: CHART_HEIGHT + 30, position: 'relative' }}>
-          {/* เปลี่ยนจาก svg เป็น Svg ตัวใหญ่ */}
           <Svg width={CHART_WIDTH} height={CHART_HEIGHT} style={{ overflow: 'visible' }}>
             <Path d={pathD} stroke="#E63946" strokeWidth="2.5" fill="none" />
-            {points.map((p, i) => (
-              <G key={i}>
-                <Circle cx={p.x} cy={p.y} r="5" fill="#E63946" />
-                <SvgText x={p.x} y={p.y - 10} textAnchor="middle" fill="#fff" fontSize="10">{p.weight}</SvgText>
+            {points.map((point, index) => (
+              <G key={index}>
+                <Circle cx={point.x} cy={point.y} r="5" fill="#E63946" />
+                <SvgText x={point.x} y={point.y - 10} textAnchor="middle" fill="#fff" fontSize="10">
+                  {point.weight}
+                </SvgText>
               </G>
             ))}
           </Svg>
+
           <View style={styles.chartLabels}>
-            {weightHistory.map((r, i) => (
-              <Text key={i} style={styles.chartLabel}>{r.date}</Text>
+            {weightHistory.map((record, index) => (
+              <Text key={index} style={styles.chartLabel}>{record.date}</Text>
             ))}
           </View>
         </View>
@@ -95,11 +100,13 @@ export default function StatsScreen({ navigation }) {
             <Text style={styles.statValue}>{userData.weight || '-'}</Text>
             <Text style={styles.statUnit}>กก.</Text>
           </View>
+
           <View style={[styles.statCard, { borderColor: getBMIColor(stats.bmi) }]}>
             <Text style={styles.statLabel}>BMI</Text>
             <Text style={[styles.statValue, { color: getBMIColor(stats.bmi) }]}>{stats.bmi || '-'}</Text>
             <Text style={[styles.statUnit, { color: getBMIColor(stats.bmi) }]}>{stats.bmi ? getBMILabel(stats.bmi) : ''}</Text>
           </View>
+
           <View style={styles.statCard}>
             <Text style={styles.statLabel}>TDEE</Text>
             <Text style={styles.statValue}>{stats.tdee || '-'}</Text>
@@ -114,19 +121,19 @@ export default function StatsScreen({ navigation }) {
               {parseFloat(weightChange) > 0 ? '+' : ''}{weightChange} กก.
             </Text>
             <Text style={styles.changeSub}>
-              {parseFloat(weightChange) < 0 ? '🎉 ลดได้แล้ว!' : parseFloat(weightChange) > 0 ? '📈 เพิ่มขึ้น' : '➡️ คงที่'}
+              {parseFloat(weightChange) < 0 ? 'ลดลงแล้ว เก่งมาก' : parseFloat(weightChange) > 0 ? 'น้ำหนักเพิ่มขึ้น' : 'น้ำหนักคงที่'}
             </Text>
           </View>
         )}
 
         {weightHistory.length >= 2 ? renderWeightChart() : (
           <View style={styles.emptyChart}>
-            <Text style={styles.emptyChartText}>📊 บันทึกน้ำหนักอย่างน้อย 2 ครั้ง เพื่อดูกราฟครับ</Text>
+            <Text style={styles.emptyChartText}>บันทึกน้ำหนักอย่างน้อย 2 ครั้ง เพื่อดูกราฟครับ</Text>
           </View>
         )}
 
         <View style={styles.recordCard}>
-          <Text style={styles.recordTitle}>⚖️ บันทึกน้ำหนักวันนี้</Text>
+          <Text style={styles.recordTitle}>บันทึกน้ำหนักวันนี้</Text>
           <View style={styles.recordRow}>
             <TextInput
               style={styles.recordInput}
@@ -146,7 +153,7 @@ export default function StatsScreen({ navigation }) {
         {weightHistory.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>ประวัติการบันทึก</Text>
-            {[...weightHistory].reverse().map((record, index) => (
+            {[...weightHistory].reverse().map((record) => (
               <View key={record.id} style={styles.historyRow}>
                 <View style={styles.historyDot} />
                 <View style={{ flex: 1 }}>
@@ -165,7 +172,7 @@ export default function StatsScreen({ navigation }) {
         <View style={styles.weekCard}>
           <Text style={styles.weekLabel}>สัปดาห์ปัจจุบัน</Text>
           <Text style={styles.weekValue}>สัปดาห์ที่ {currentWeek}</Text>
-          <Text style={styles.weekGoal}>เป้าหมาย: {userData.goal || 'ยังไม่ระบุ'}</Text>
+          <Text style={styles.weekGoal}>เป้าหมาย: {userData.goal || 'ยังไม่ได้ระบุ'}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
