@@ -4,9 +4,11 @@ import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, Touchabl
 import { useApp } from '../context/AppContext';
 
 
-const API_KEY = "AIzaSyAwxpDvt7S2U0WcB1g6eZKWd4KPHpXjB-o";
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
 async function getNutritionPlan(userData, calculatedTdee) {
+  if (!API_KEY) return null;
+
   const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
   const promptText = `คุณคือนักโภชนาการ AI จัดเมนูอาหารให้ได้พลังงานรวม ${calculatedTdee} kcal (ห้ามเกินห้ามขาดมากเกินไป)
 เป้าหมายผู้ใช้: ${userData.goal}

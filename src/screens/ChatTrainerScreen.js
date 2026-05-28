@@ -5,7 +5,7 @@ import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, StyleSheet, Text, 
 import { Bubble, Composer, GiftedChat, InputToolbar, Send } from 'react-native-gifted-chat';
 import { useApp } from '../context/AppContext';
 
-const API_KEY = 'AIzaSyAwxpDvt7S2U0WcB1g6eZKWd4KPHpXjB-o';
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
 const ALL_EXERCISES = {
   chest: { c1: 'Bench Press', c2: 'Dumbbell Press', c3: 'Dumbbell Fly', c4: 'Dumbbell Pullover', c5: 'Chest Dip' },
@@ -23,7 +23,35 @@ const exerciseListText = Object.entries(ALL_EXERCISES)
 
 const hasUserData = (userData) => Boolean(userData?.weight && userData?.height && userData?.age);
 
+const getGeminiErrorMessage = (status, data) => {
+  const error = data?.error || {};
+  const message = String(error.message || data?.message || '').toLowerCase();
+  const reason = error.status || error.code || status || 'unknown';
+
+  if (status === 429 || message.includes('quota') || message.includes('rate limit')) {
+    return `คุณใช้เกินลิมิต AI แล้วครับ\n\nสาเหตุ: Gemini API แจ้งว่าโควต้าหรือจำนวนการเรียกใช้งานเกินกำหนด\nรหัสปัญหา: ${reason}\n\nลองรอสักพักแล้วใช้งานใหม่ หรือเช็กโควต้า/API billing ใน Google AI Studio ครับ`;
+  }
+
+  if (status === 400 || message.includes('api key') || message.includes('key not valid')) {
+    return `AI มีปัญหาครับ\n\nสาเหตุ: API Key หรือ request ที่ส่งไปยัง Gemini ไม่ถูกต้อง\nรหัสปัญหา: ${reason}\n\nให้เช็ก API_KEY, โมเดล Gemini และรูปแบบข้อมูลที่ส่งไปครับ`;
+  }
+
+  if (status === 401 || status === 403 || message.includes('permission') || message.includes('forbidden')) {
+    return `AI มีปัญหาครับ\n\nสาเหตุ: โปรเจกต์หรือ API Key ไม่มีสิทธิ์เรียก Gemini API\nรหัสปัญหา: ${reason}\n\nให้เช็กว่าเปิดใช้งาน Gemini API แล้ว, API key ยังใช้ได้, และโปรเจกต์ Google/Firebase ผูกถูกตัวครับ`;
+  }
+
+  if (status === 503 || message.includes('overloaded') || message.includes('unavailable')) {
+    return `AI มีปัญหาชั่วคราวครับ\n\nสาเหตุ: เซิร์ฟเวอร์ Gemini ไม่พร้อมใช้งานหรือโหลดสูง\nรหัสปัญหา: ${reason}\n\nลองส่งใหม่อีกครั้งในอีกสักครู่ครับ`;
+  }
+
+  return `AI มีปัญหาครับ\n\nสาเหตุ: ${error.message || data?.message || 'Gemini ไม่ส่งคำตอบกลับมาตามปกติ'}\nรหัสปัญหา: ${reason}`;
+};
+
 async function askGemini(prompt, userData, stats) {
+  if (!API_KEY) {
+    return 'AI มีปัญหาครับ\n\nสาเหตุ: ยังไม่ได้ตั้งค่า EXPO_PUBLIC_GEMINI_API_KEY ในไฟล์ .env\n\nให้สร้างไฟล์ .env แล้วใส่ Gemini API Key ใหม่ จากนั้นรัน npx expo start -c ครับ';
+  }
+
   const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
   const userDataComplete = hasUserData(userData);
 
@@ -59,14 +87,19 @@ ${!userDataComplete
     });
 
     const data = await response.json();
+    if (!response.ok || data.error) return getGeminiErrorMessage(response.status, data);
     if (data.candidates?.[0]?.content) return data.candidates[0].content.parts[0].text;
-    return 'ขออภัยครับ ลองใหม่อีกครั้งนะครับ';
-  } catch {
-    return 'เชื่อมต่อไม่ได้ครับ';
+    return 'AI มีปัญหาครับ\n\nสาเหตุ: Gemini ไม่ส่งข้อความตอบกลับมา อาจเกิดจากโมเดลถูกบล็อกคำตอบหรือ response ว่างครับ';
+  } catch (error) {
+    return `AI มีปัญหาครับ\n\nสาเหตุ: เชื่อมต่อ Gemini API ไม่ได้ หรืออินเทอร์เน็ต/API endpoint มีปัญหา\nรายละเอียด: ${error?.message || 'network error'}`;
   }
 }
 
 async function generateAIProgram(userRequest, userData) {
+  if (!API_KEY) {
+    return { error: 'AI มีปัญหาครับ\n\nสาเหตุ: ยังไม่ได้ตั้งค่า EXPO_PUBLIC_GEMINI_API_KEY ในไฟล์ .env\n\nให้สร้างไฟล์ .env แล้วใส่ Gemini API Key ใหม่ จากนั้นรัน npx expo start -c ครับ' };
+  }
+
   const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
   try {
     const response = await fetch(URL, {
@@ -101,17 +134,24 @@ ${exerciseListText}
     });
 
     const data = await response.json();
+    if (!response.ok || data.error) {
+      return { error: getGeminiErrorMessage(response.status, data) };
+    }
     if (data.candidates?.[0]?.content) {
       const text = data.candidates[0].content.parts[0].text;
       return JSON.parse(text.replace(/```json|```/g, '').trim());
     }
     return null;
-  } catch {
-    return null;
+  } catch (error) {
+    return { error: `AI มีปัญหาครับ\n\nสาเหตุ: สร้างโปรแกรมไม่สำเร็จหรือ JSON ที่ AI ส่งกลับมาอ่านไม่ได้\nรายละเอียด: ${error?.message || 'parse error'}` };
   }
 }
 
 async function analyzeBodyImage(base64Image, userData, stats) {
+  if (!API_KEY) {
+    return 'AI มีปัญหาครับ\n\nสาเหตุ: ยังไม่ได้ตั้งค่า EXPO_PUBLIC_GEMINI_API_KEY ในไฟล์ .env\n\nให้สร้างไฟล์ .env แล้วใส่ Gemini API Key ใหม่ จากนั้นรัน npx expo start -c ครับ';
+  }
+
   const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
   try {
     const response = await fetch(URL, {
@@ -128,10 +168,11 @@ async function analyzeBodyImage(base64Image, userData, stats) {
     });
 
     const data = await response.json();
+    if (!response.ok || data.error) return getGeminiErrorMessage(response.status, data);
     if (data.candidates?.[0]?.content) return data.candidates[0].content.parts[0].text;
-    return 'วิเคราะห์รูปไม่ได้ครับ';
-  } catch {
-    return 'เชื่อมต่อไม่ได้ครับ';
+    return 'AI มีปัญหาครับ\n\nสาเหตุ: Gemini ไม่ส่งผลวิเคราะห์รูปกลับมา อาจเกิดจากรูปไม่ชัดหรือ response ว่างครับ';
+  } catch (error) {
+    return `AI มีปัญหาครับ\n\nสาเหตุ: เชื่อมต่อ Gemini API เพื่อวิเคราะห์รูปไม่ได้\nรายละเอียด: ${error?.message || 'network error'}`;
   }
 }
 
@@ -163,6 +204,17 @@ export default function ChatTrainerScreen({ navigation }) {
     setLoadingProgram(true);
     setShowProgramModal(true);
     const program = await generateAIProgram(userRequest, userData);
+    if (program?.error) {
+      setChatMessages((prev) => GiftedChat.append(prev, [{
+        _id: Math.random().toString(),
+        text: program.error,
+        createdAt: new Date(),
+        user: { _id: 2, name: 'AI Trainer' },
+      }]));
+      setShowProgramModal(false);
+      setLoadingProgram(false);
+      return;
+    }
     setGeneratedProgram(program);
     setLoadingProgram(false);
   };

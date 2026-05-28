@@ -1,5 +1,9 @@
 export async function askGemini(prompt, userContext, exerciseData) {
-  const API_KEY = "AIzaSyAwxpDvt7S2U0WcB1g6eZKWd4KPHpXjB-o";
+  const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  if (!API_KEY) {
+    return 'AI มีปัญหาครับ\n\nสาเหตุ: ยังไม่ได้ตั้งค่า EXPO_PUBLIC_GEMINI_API_KEY ในไฟล์ .env';
+  }
+
   const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
   try {
