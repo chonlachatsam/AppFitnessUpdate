@@ -44,18 +44,6 @@ const getDefaultMealSlotByHour = (date = new Date()) => {
   return 'snack';
 };
 
-const buildProfileSnapshot = (userData, stats, nutritionTargets) => ({
-  weight: userData?.weight || '',
-  height: userData?.height || '',
-  age: userData?.age || '',
-  goal: userData?.goal || '',
-  bmi: stats?.bmi || 0,
-  tdee: stats?.tdee || 0,
-  proteinTarget: nutritionTargets?.proteinTarget || 0,
-  carbsTarget: nutritionTargets?.carbsTarget || 0,
-  fatTarget: nutritionTargets?.fatTarget || 0,
-});
-
 const buildDailyNutrition = ({ dateKey, targetCalories = 0, userData, stats, nutritionTargets }) => ({
   date: dateKey,
   targetCalories: Number(targetCalories) || 0,
@@ -65,7 +53,17 @@ const buildDailyNutrition = ({ dateKey, targetCalories = 0, userData, stats, nut
   carbs: 0,
   fat: 0,
   entries: [],
-  profileSnapshot: buildProfileSnapshot(userData, stats, nutritionTargets),
+  profileSnapshot: {
+    weight: userData?.weight || '',
+    height: userData?.height || '',
+    age: userData?.age || '',
+    goal: userData?.goal || '',
+    bmi: stats?.bmi || 0,
+    tdee: stats?.tdee || 0,
+    proteinTarget: nutritionTargets?.proteinTarget || 0,
+    carbsTarget: nutritionTargets?.carbsTarget || 0,
+    fatTarget: nutritionTargets?.fatTarget || 0,
+  },
   closedAt: null,
   lastUpdatedAt: new Date().toISOString(),
 });
@@ -87,7 +85,17 @@ const hydrateDailyNutrition = (baseDay, userData, stats, nutritionTargets) => {
     protein,
     carbs,
     fat,
-    profileSnapshot: baseDay?.profileSnapshot || buildProfileSnapshot(userData, stats, nutritionTargets),
+    profileSnapshot: baseDay?.profileSnapshot || {
+      weight: userData?.weight || '',
+      height: userData?.height || '',
+      age: userData?.age || '',
+      goal: userData?.goal || '',
+      bmi: stats?.bmi || 0,
+      tdee: stats?.tdee || 0,
+      proteinTarget: nutritionTargets?.proteinTarget || 0,
+      carbsTarget: nutritionTargets?.carbsTarget || 0,
+      fatTarget: nutritionTargets?.fatTarget || 0,
+    },
     lastUpdatedAt: baseDay?.lastUpdatedAt || new Date().toISOString(),
   };
 };
@@ -118,7 +126,7 @@ export const AppProvider = ({ children }) => {
 
   const [chatMessages, setChatMessages] = useState([{
     _id: 1,
-    text: 'สวัสดีครับ ผมคือ AT AI เทรนเนอร์ส่วนตัวของคุณ\n\nผมช่วยคุณได้:\n• วิเคราะห์รูปร่างและแนะนำโปรแกรม\n• จัดตารางออกกำลังกายให้เหมาะกับเป้าหมาย\n• อัปเดตน้ำหนัก ส่วนสูง อายุ เข้าระบบอัตโนมัติ\n• ให้คำแนะนำเรื่องการฝึกและโภชนาการ\n\nพร้อมช่วยคุณทุกวันครับ',
+    text: 'สวัสดีครับ ผมคือ AT AI Traine ส่วนตัวของคุณ\n\nแต่ก่อนอื่นรบกวนส่งข้อมูล นํ้าหนัก ส่วนสูง อายุ\n\nส่งรูปร่างมาให้วิเคราะห์ วางโปรแกรม และช่วยดูข้อมูลสุขภาพได้เลยครับ',
     createdAt: new Date(),
     user: { _id: 2, name: 'AI Trainer' },
   }]);
@@ -171,10 +179,17 @@ export const AppProvider = ({ children }) => {
     return { proteinTarget, fatTarget, carbsTarget };
   }, [stats.tdee, userData.goal, userData.weight]);
 
-  const buildSnapshot = useCallback(
-    () => buildProfileSnapshot(userData, stats, nutritionTargets),
-    [nutritionTargets, stats, userData]
-  );
+  const buildProfileSnapshot = useCallback(() => ({
+    weight: userData?.weight || '',
+    height: userData?.height || '',
+    age: userData?.age || '',
+    goal: userData?.goal || '',
+    bmi: stats?.bmi || 0,
+    tdee: stats?.tdee || 0,
+    proteinTarget: nutritionTargets?.proteinTarget || 0,
+    carbsTarget: nutritionTargets?.carbsTarget || 0,
+    fatTarget: nutritionTargets?.fatTarget || 0,
+  }), [nutritionTargets, stats, userData]);
 
   const ensureNutritionDay = useCallback((dateKey, targetCalories = stats.tdee || 0, sourceLog = {}) => {
     const existing = sourceLog[dateKey];
@@ -182,13 +197,7 @@ export const AppProvider = ({ children }) => {
       return hydrateDailyNutrition(existing, userData, stats, nutritionTargets);
     }
 
-    return buildDailyNutrition({
-      dateKey,
-      targetCalories,
-      userData,
-      stats,
-      nutritionTargets,
-    });
+    return buildDailyNutrition({ dateKey, targetCalories, userData, stats, nutritionTargets });
   }, [nutritionTargets, stats, userData]);
 
   const syncNutritionTarget = useCallback((dateKey = formatDateKey()) => {
@@ -201,12 +210,12 @@ export const AppProvider = ({ children }) => {
           ...currentDay,
           targetCalories,
           remainingCalories: targetCalories - (currentDay.consumedCalories || 0),
-          profileSnapshot: buildSnapshot(),
+          profileSnapshot: buildProfileSnapshot(),
           lastUpdatedAt: new Date().toISOString(),
         },
       };
     });
-  }, [buildSnapshot, ensureNutritionDay, stats.tdee]);
+  }, [buildProfileSnapshot, ensureNutritionDay, stats.tdee]);
 
   useEffect(() => {
     const todayKey = formatDateKey();
@@ -228,7 +237,7 @@ export const AppProvider = ({ children }) => {
         ...todayDay,
         targetCalories,
         remainingCalories: targetCalories - (todayDay.consumedCalories || 0),
-        profileSnapshot: buildSnapshot(),
+        profileSnapshot: buildProfileSnapshot(),
         closedAt: null,
         lastUpdatedAt: new Date().toISOString(),
       };
@@ -254,7 +263,7 @@ export const AppProvider = ({ children }) => {
       return changed ? next : prev;
     });
   }, [
-    buildSnapshot,
+    buildProfileSnapshot,
     ensureNutritionDay,
     nutritionTargets.carbsTarget,
     nutritionTargets.fatTarget,
@@ -328,9 +337,7 @@ export const AppProvider = ({ children }) => {
       const totalProtein = entries.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
       const totalCarbs = entries.reduce((sum, item) => sum + (Number(item.carbs) || 0), 0);
       const totalFat = entries.reduce((sum, item) => sum + (Number(item.fat) || 0), 0);
-      const targetCalories = dateKey === formatDateKey()
-        ? (stats.tdee || base.targetCalories || 0)
-        : (base.targetCalories || 0);
+      const targetCalories = dateKey === formatDateKey() ? (stats.tdee || base.targetCalories || 0) : (base.targetCalories || 0);
 
       return {
         ...prev,
@@ -344,7 +351,7 @@ export const AppProvider = ({ children }) => {
           carbs: totalCarbs,
           fat: totalFat,
           entries,
-          profileSnapshot: buildSnapshot(),
+          profileSnapshot: buildProfileSnapshot(),
           closedAt: dateKey === formatDateKey() ? null : base.closedAt,
           lastUpdatedAt: new Date().toISOString(),
         },
@@ -389,9 +396,7 @@ export const AppProvider = ({ children }) => {
       const totalProtein = entries.reduce((sum, item) => sum + (Number(item.protein) || 0), 0);
       const totalCarbs = entries.reduce((sum, item) => sum + (Number(item.carbs) || 0), 0);
       const totalFat = entries.reduce((sum, item) => sum + (Number(item.fat) || 0), 0);
-      const targetCalories = dateKey === formatDateKey()
-        ? (stats.tdee || base.targetCalories || 0)
-        : (base.targetCalories || 0);
+      const targetCalories = dateKey === formatDateKey() ? (stats.tdee || base.targetCalories || 0) : (base.targetCalories || 0);
 
       return {
         ...prev,
@@ -405,7 +410,7 @@ export const AppProvider = ({ children }) => {
           carbs: totalCarbs,
           fat: totalFat,
           entries,
-          profileSnapshot: buildSnapshot(),
+          profileSnapshot: buildProfileSnapshot(),
           closedAt: dateKey === formatDateKey() ? null : base.closedAt,
           lastUpdatedAt: new Date().toISOString(),
         },
@@ -417,18 +422,10 @@ export const AppProvider = ({ children }) => {
 
   const getNutritionSummary = useCallback((dateKey = formatDateKey()) => {
     const base = ensureNutritionDay(dateKey, stats.tdee || 0, nutritionLog);
-    const targetCalories = dateKey === formatDateKey()
-      ? (stats.tdee || base.targetCalories || 0)
-      : (base.targetCalories || 0);
-    const proteinTarget = dateKey === formatDateKey()
-      ? (nutritionTargets.proteinTarget || 0)
-      : (base.profileSnapshot?.proteinTarget || 0);
-    const carbsTarget = dateKey === formatDateKey()
-      ? (nutritionTargets.carbsTarget || 0)
-      : (base.profileSnapshot?.carbsTarget || 0);
-    const fatTarget = dateKey === formatDateKey()
-      ? (nutritionTargets.fatTarget || 0)
-      : (base.profileSnapshot?.fatTarget || 0);
+    const targetCalories = dateKey === formatDateKey() ? (stats.tdee || base.targetCalories || 0) : (base.targetCalories || 0);
+    const proteinTarget = dateKey === formatDateKey() ? (nutritionTargets.proteinTarget || 0) : (base.profileSnapshot?.proteinTarget || 0);
+    const carbsTarget = dateKey === formatDateKey() ? (nutritionTargets.carbsTarget || 0) : (base.profileSnapshot?.carbsTarget || 0);
+    const fatTarget = dateKey === formatDateKey() ? (nutritionTargets.fatTarget || 0) : (base.profileSnapshot?.fatTarget || 0);
 
     return {
       ...base,
